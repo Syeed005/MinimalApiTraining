@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using MinimalApi.Data;
 using MinimalApi.Data.Dto;
 using System.Collections.Generic;
+using System.Net;
 
 namespace MinimalApi {
     public class Program {
@@ -33,29 +34,51 @@ namespace MinimalApi {
 
 
             app.MapGet("/api/coupon", (ILogger<Program> _logger) => {
-                _logger.LogInformation("Getting all coupon");
-                return Results.Ok(CouponStore.CouponList);
-            }).WithName("GetCoupons").Produces<IEnumerable<Coupon>>(200);
+                _logger.Log(LogLevel.Information,"Getting all coupon");
+
+                APIResponse response = new APIResponse();
+                response.IsSuccess = true;
+                response.Result = CouponStore.CouponList;
+                response.StatusCode = HttpStatusCode.OK;
+
+                return Results.Ok(response);
+            }).WithName("GetCoupons").Produces<APIResponse>(200);
 
             app.MapGet("/api/coupon/{id:int}", (int id) => {
-                return Results.Ok(CouponStore.CouponList.FirstOrDefault(x=>x.Id==id));
-            }).WithName("GetCoupon").Produces<Coupon>(200);
+                APIResponse response = new APIResponse();
+                response.IsSuccess = true;
+                response.Result = CouponStore.CouponList.FirstOrDefault(x => x.Id == id);
+                response.StatusCode = HttpStatusCode.OK;
+                return Results.Ok(response);
+            }).WithName("GetCoupon").Produces<APIResponse>(200);
 
             app.MapPost("/api/coupon", async (IValidator<CouponCreatedDto> _validator, IMapper _mapper, [FromBody] CouponCreatedDto couponCreatedDto) => {
+                APIResponse response = new APIResponse();
                 var validationResult = await _validator.ValidateAsync(couponCreatedDto);
                 if (!validationResult.IsValid) {
-                    return Results.BadRequest("Invalid Id or coupon name");
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.ErrorMessages.Add(validationResult.Errors.FirstOrDefault().ToString());
+                    return Results.BadRequest(response);
                 }
                 if (CouponStore.CouponList.FirstOrDefault(x=>x.Name.ToLower() == couponCreatedDto.Name.ToLower()) != null) {
-                    return Results.BadRequest("Coupon name is already exists");
+                    response.StatusCode = HttpStatusCode.BadRequest;
+                    response.ErrorMessages.Add("Coupon name is already exists");
+                    return Results.BadRequest(response);
                 }
                 Coupon coupon = _mapper.Map<Coupon>(couponCreatedDto);
                 coupon.Id = CouponStore.CouponList.OrderByDescending(x => x.Id).FirstOrDefault().Id + 1;
                 CouponStore.CouponList.Add(coupon);
                 CouponDto couponDto = _mapper.Map<CouponDto>(coupon);
-                return Results.CreatedAtRoute($"GetCoupon",new { Id = couponDto.Id}, couponDto);
+
+                response.IsSuccess = true;
+                response.Result = couponDto;
+                response.StatusCode = HttpStatusCode.Created;
+
+                return Results.Ok(response);
+
+                //return Results.CreatedAtRoute($"GetCoupon",new { Id = couponDto.Id}, couponDto);
                 //return Results.Created($"/api/coupon/{coupon.Id}", coupon);
-            }).WithName("PostCoupon").Accepts<CouponCreatedDto>("application/json").Produces<CouponDto>(201).Produces(400);
+            }).WithName("PostCoupon").Accepts<CouponCreatedDto>("application/json").Produces<APIResponse>(201).Produces(400);
 
             app.MapPut("/api/coupon", () => {
                 
