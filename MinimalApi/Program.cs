@@ -1,5 +1,6 @@
 
 using AutoMapper;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using MinimalApi.Data;
 using MinimalApi.Data.Dto;
@@ -17,6 +18,7 @@ namespace MinimalApi {
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
             builder.Services.AddAutoMapper(typeof(MappingConfig));
+            builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
             var app = builder.Build();
 
@@ -39,8 +41,9 @@ namespace MinimalApi {
                 return Results.Ok(CouponStore.CouponList.FirstOrDefault(x=>x.Id==id));
             }).WithName("GetCoupon").Produces<Coupon>(200);
 
-            app.MapPost("/api/coupon", (IMapper _mapper, [FromBody] CouponCreatedDto couponCreatedDto) => {
-                if (string.IsNullOrEmpty(couponCreatedDto.Name) ) {
+            app.MapPost("/api/coupon", async (IValidator<CouponCreatedDto> _validator, IMapper _mapper, [FromBody] CouponCreatedDto couponCreatedDto) => {
+                var validationResult = await _validator.ValidateAsync(couponCreatedDto);
+                if (!validationResult.IsValid) {
                     return Results.BadRequest("Invalid Id or coupon name");
                 }
                 if (CouponStore.CouponList.FirstOrDefault(x=>x.Name.ToLower() == couponCreatedDto.Name.ToLower()) != null) {
