@@ -27,7 +27,8 @@ namespace MinimalApi {
             app.UseAuthorization();
 
 
-            app.MapGet("/api/coupon", () => {
+            app.MapGet("/api/coupon", (ILogger<Program> _logger) => {
+                _logger.LogInformation("Getting all coupon");
                 return Results.Ok(CouponStore.CouponList);
             }).WithName("GetCoupons").Produces<IEnumerable<Coupon>>(200);
 
