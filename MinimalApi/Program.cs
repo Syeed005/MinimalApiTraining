@@ -23,6 +23,7 @@ namespace MinimalApi {
                 options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
             });
             builder.Services.AddScoped<ICouponRepository, CouponRepository>();
+            builder.Services.AddScoped<IAuthRepository, AuthRepository>();
 
             
             // Add services to the container.
@@ -47,6 +48,7 @@ namespace MinimalApi {
 
 
             app.ConfigureCouponEndpoints();
+            app.ConfigureAuthEndpoints();
 
             app.Run();
         }
