@@ -7,6 +7,7 @@ namespace MinimalApi {
         {
             CreateMap<Coupon, CouponCreatedDto>().ReverseMap();
             CreateMap<Coupon, CouponDto>().ReverseMap();
+            CreateMap<Coupon, CouponUpdatedDto>().ReverseMap();
         }
     }
 }
