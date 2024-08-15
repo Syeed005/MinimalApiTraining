@@ -6,14 +6,22 @@ using MinimalApi.Data.Dto;
 using MinimalApi.Data;
 using MinimalApi.Repository.IRepository;
 using System.Net;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MinimalApi.Endpoints {
     public static class CouponEndpoints {
         public static void ConfigureCouponEndpoints(this WebApplication app) {
 
-            app.MapGet("/api/coupon", GetAllCoupon).WithName("GetCoupons").Produces<APIResponse>(200);
+            app.MapGet("/api/coupon", GetAllCoupon).WithName("GetCoupons").Produces<APIResponse>(200).RequireAuthorization("AdminOnly");
 
-            app.MapGet("/api/coupon/{id:int}", GetCoupon).WithName("GetCoupon").Produces<APIResponse>(200);
+            app.MapGet("/api/coupon/{id:int}", GetCoupon).WithName("GetCoupon").Produces<APIResponse>(200).AddEndpointFilter(async(context, next) => {
+                var id = context.GetArgument<int>(1);
+                if (id == 0) {
+                    return Results.BadRequest("Id cant not be 0");
+                }
+                var result =  await next(context);
+
+            });
 
             app.MapPost("/api/coupon", CreateCoupon).WithName("PostCoupon").Accepts<CouponCreatedDto>("application/json").Produces<APIResponse>(201).Produces(400);
 
@@ -37,6 +45,7 @@ namespace MinimalApi.Endpoints {
             return Results.Ok(response);
         }
 
+        [Authorize]
         public async static Task<IResult> CreateCoupon(ICouponRepository _couponRepo, IValidator<CouponCreatedDto> _validator, IMapper _mapper, [FromBody] CouponCreatedDto couponCreatedDto) {
             APIResponse response = new APIResponse();
             var validationResult = await _validator.ValidateAsync(couponCreatedDto);
