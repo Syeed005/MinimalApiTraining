@@ -19,8 +19,10 @@ namespace MinimalApi.Endpoints {
                 if (id == 0) {
                     return Results.BadRequest("Id cant not be 0");
                 }
+                //logic before enpoint
                 var result =  await next(context);
-
+                //logic after endpont
+                return result;
             });
 
             app.MapPost("/api/coupon", CreateCoupon).WithName("PostCoupon").Accepts<CouponCreatedDto>("application/json").Produces<APIResponse>(201).Produces(400);
